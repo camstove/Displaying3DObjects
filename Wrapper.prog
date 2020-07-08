@@ -1,0 +1,170 @@
+'use strict'
+
+const MAX_SCALE = .75;
+const MIN_SCALE = .25;
+
+class Wrapper {
+    constructor (gl, program, widget, num=0) {
+        this.num = num;
+        this.widget = widget;
+        this.middle = this.widget.GetMiddle();
+        this.SetColor(num);
+        this.Reset();
+        this.Transform();
+
+        this.shaderLoc = gl.getUniformLocation(program, "vShader");
+   }
+   
+   SetColor(n) {
+       switch(n){
+           case 1: this.color = this.ColorSet1();break;
+           case 2: this.color = this.ColorSet2();break;
+           case 3: this.color = this.ColorSet3();break;
+           case 4: this.color = this.ColorSet4();break;
+           default: this.color = this.ColorSet0();break;
+        }
+    }
+    
+    ColorSet0() {
+        let temp = [];
+        for (let i = 0; i < this.widget.size; i++) {
+            temp.push([0.0,0.0,0.0,1.0]);
+        }
+        return temp;
+    }
+    
+    ColorSet1() {
+        let temp = [];
+        for (let i = 0; i < this.widget.size; i++) {
+            temp.push([Math.random(),Math.random(),Math.random(),1.0]);
+        }
+        return temp;
+    }
+    
+    ColorSet2() {
+        let temp = [];
+        for (let i = 0; i < this.widget.size; i++) {
+            temp.push([1.0,1.0,0.0,1.0]);
+        }
+        return temp;
+    }
+    
+    
+       FlipDigit(digit){
+        let rv = 0.0;
+        
+        if(digit > rv){
+            rv=1.0;
+        }
+        
+        return rv;
+    }
+   
+    
+    ColorSet3() {
+        let temp = [];
+        let x,y,z;
+        for (let i = 0; i < this.widget.size; i++) {
+
+            x = this.FlipDigit(this.widget.tris[i][0]);
+            y = this.FlipDigit(this.widget.tris[i][1]);
+            z = this.FlipDigit(this.widget.tris[i][2]);
+       
+            temp.push([x,y,z,1.0]);
+        }
+        
+        return temp;
+    }
+    
+  
+    
+    ColorSet4() {
+        let temp = [];
+        for (let i = 0; i < this.widget.size; i++) {
+            temp.push([0.0,1.0,0.0,1.0]);
+        }
+        
+        return temp;
+    }
+
+
+   Display(gl, transform, transLoc) {
+       
+       gl.bindBuffer(gl.ARRAY_BUFFER, this.widget.cBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,flatten(this.color),gl.STATIC_DRAW);
+        gl.uniform1i(this.shaderLoc,this.num);
+       
+       if(this.Visible()){
+            this.Transform(); 
+            // multiply it by any incoming transformation matrix
+            let tx = mult(transform, this.transform);
+            this.widget.Display(gl,tx,transLoc);
+        }
+   }
+   
+   Show() {
+       this.visible = true;
+   }
+   
+   Hide() {
+       this.visible = false;
+   }
+   
+   Visible() {
+       return this.visible;
+   }
+   
+   Transform() {
+       let center = this.widget.center;
+       var tmp = translate(this.tx+center[0], this.ty+center[1], this.tz+center[2]);
+       tmp = mult(tmp, scalem(this.sx, this.sy, this.sz));
+       tmp = mult(tmp, rotate(this.rz, [0,0,1]));
+       tmp = mult(tmp, rotate(this.ry, [0,1,0]));
+       tmp = mult(tmp, rotate(this.rx, [1,0,0]));
+       tmp = mult(tmp, translate(-center[0],-center[1],-center[2]));
+       this.transform = tmp;
+       
+}
+
+    Rotate(x,y,z){
+        this.rx += x;
+        this.ry += y;
+        this.rz += z;
+        
+    }
+
+    Scale(x){
+        this.sx += x;
+        this.sy += x;
+        this.sz += x;        
+    }
+    
+    GetScale(){
+        return this.sx;
+    }
+    
+    Translate(x,y,z){
+        this.tx += x;
+        this.ty += y;
+        this.tz += z;
+       
+    }
+   
+   Reset() {
+       
+       let middle = this.middle;
+       
+        this.visible = true;
+        this.tx = middle[0];
+        this.ty = middle[1];
+        this.tz = middle[2];
+        this.sx = middle[3];
+        this.sy = middle[4];
+        this.sz = middle[5];
+        this.rx = middle[6];
+        this.ry = middle[7];
+        this.rz = middle[8];
+        
+   }
+   
+}

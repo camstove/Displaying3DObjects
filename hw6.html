@@ -1,0 +1,235 @@
+<html>
+<head>
+
+<script id="vertex-shader" type="x-shader/x-vertex" >
+precision mediump float;
+
+attribute vec4 attributePosition;
+attribute float attributeBC;
+attribute vec4 vColor;
+
+
+uniform mat4 uniformTransform;
+uniform mat4 uniformProject;
+uniform int vShader;
+
+varying vec3 varyingBC;
+
+varying vec4 e_color;
+varying vec4 f_color;
+varying vec4 b_color;
+
+void main() {
+
+    gl_Position = uniformProject * uniformTransform *  attributePosition;
+    if (attributeBC == 0.0) {
+         varyingBC = vec3(1.0, 0.0, 0.0);
+    } else if (attributeBC == 1.0) {
+         varyingBC = vec3(0.0, 1.0, 0.0);
+    } else {
+         varyingBC = vec3(0.0, 0.0, 1.0);
+    }
+    
+    if (vShader == 0) {
+        e_color = vec4(1.0,0.0,0.0,1.0);
+        f_color = vColor;
+        b_color = vec4(0.0,1.0,0.0,0.05);
+    } else if (vShader == 1) {
+        e_color = vec4(0.0,0.0,0.0,1.0);
+        f_color = vColor;
+        b_color = vColor;
+    } else if (vShader == 2) {
+        e_color = vec4(1.0,0.0,0.0,1.0);
+        f_color = vColor;
+        b_color = vec4(0.0,1.0,0.0,1.0);
+    } else if (vShader == 3) {
+        e_color = vec4(1.0,1.0,1.0,1.0);
+        f_color = vColor;
+        b_color = vec4(1.0,1.0,1.0,1.0);
+    } else if (vShader == 4) {
+        e_color = vec4(0.0,0.0,0.0,1.0);
+        f_color = vColor;
+        b_color = vec4(0.0,1.0,1.0,1.0);
+    }
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+    precision mediump float;
+    varying vec3 varyingBC;
+    uniform vec4 uniformEdgeColor;
+    uniform vec4 uniformSurfaceColor;
+    
+    varying vec4 e_color;
+    varying vec4 f_color;
+    varying vec4 b_color;
+
+    // wireframe shader
+    void main(){
+       // front face
+       if (gl_FrontFacing) {  
+           if (any(lessThan(varyingBC, vec3(0.03)))) {
+               gl_FragColor= e_color;
+           } else {
+               gl_FragColor= f_color;
+           }
+       } else {
+           // back facing
+           if (any(lessThan(varyingBC, vec3(0.05)))) {
+               gl_FragColor= e_color;
+	   } else {
+	      gl_FragColor = b_color;
+	      
+	   }
+       }
+    }
+</script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+
+<script type="text/javascript" src="../Models/teapot.js"></script>
+<!--<script type="text/javascript" src="../Models/bunny.js"> </script>
+<script type="text/javascript" src="../Models/cone.js"> </script>
+<script type="text/javascript" src="../Models/dragon.js"> </script>
+<script type="text/javascript" src="../Models/head.js"></script>
+<script type="text/javascript" src="../Models/stego.js"></script>
+<script type="text/javascript" src="../Models/xwing.js"></script>
+<script type="text/javascript" src="../Models/butterfly.js"></script>
+<script type="text/javascript" src="../Models/copter.js"></script>
+<script type="text/javascript" src="../Models/enterprise.js"></script>
+<script type="text/javascript" src="../Models/lizard.js"></script>
+<script type="text/javascript" src="../Models/tank.js"></script>
+<script type="text/javascript" src="../Models/cube.js"></script>
+<script type="text/javascript" src="../Models/epcot.js"></script>
+<script type="text/javascript" src="../Models/plane.js"></script>-->
+
+<script type="text/javascript" src="GLCanvas.prog"></script>
+<script type="text/javascript" src="Widget.prog"></script>
+<script type="text/javascript" src="Wrapper.prog"></script>
+
+<style>
+input {
+    text-align: right;
+}
+</style>
+
+</head>
+
+<body>
+     <h1>Camden Stover</h1>
+     <h1>CSCI 360 - MWF</h1>
+     <h1>Homework 6: Using WebGL</h1>
+<script>
+    
+    var canvas = new Canvas(500, 500, Keypress);
+    var objects = [];
+    var middle = [0,.5,1,1,1,1,-90,0,0];
+    var widget = new Widget(canvas.GL(), canvas.Program(), Teapot_Triangles, middle);
+    
+    var centerObj = new Wrapper(canvas.GL(), canvas.Program(),widget);
+    objects.push(centerObj);
+    
+    var topLeft = new Wrapper(canvas.GL(), canvas.Program(),widget,1);
+    
+    var bottomLeft = new Wrapper(canvas.GL(), canvas.Program(),widget,2);
+    
+    var topRight = new
+    Wrapper(canvas.GL(), canvas.Program(),widget,3);
+    
+    var bottomRight = new Wrapper(canvas.GL(), canvas.Program(),widget,4);
+    
+    objects.push(topRight);
+    objects.push(bottomRight);
+    objects.push(topLeft);
+    objects.push(bottomLeft);
+    
+    AdjustObjs();
+    
+    function AdjustObjs(){
+        topRight.Translate(-.65,.65,0);
+        bottomRight.Translate(-.65,-.65,0);
+        topLeft.Translate(.65,.65,0);
+        bottomLeft.Translate(.65,-.65,0);
+        for(let x=1; x<objects.length;x++){
+            objects[x].Scale(-.55);
+        }
+    }
+    
+    var grow = true;
+    
+    function Animate(){
+        
+        topLeft.Rotate(0,.5,0);
+        bottomLeft.Rotate(1,0,0);
+        topRight.Rotate(0,0,2);
+        
+        if (grow){
+            bottomRight.Scale(.0015);
+            if(bottomRight.GetScale()>=MAX_SCALE){
+                grow = false;
+            }
+        }
+        
+        if(!grow){
+            bottomRight.Scale(-.0015);
+            if(bottomRight.GetScale()<=MIN_SCALE){
+                grow = true;
+            }
+        }
+    
+        Redisplay();
+        setTimeout(Animate,20);
+    }
+
+    function Keypress(evnt) {
+       switch(evnt.key) {
+          case 'x': centerObj.rx++; break;
+          case 'y': centerObj.ry++; break;
+          case 'z': centerObj.rz++; break;
+          case 'X': centerObj.rx--; break;
+          case 'Y': centerObj.ry--; break;
+          case 'Z': centerObj.rz--; break;
+          case '-': centerObj.Scale(-.1); break;
+          case '+': centerObj.Scale(.1); break;
+          case 'r':
+          case 'R': Reset(); break;
+       }
+        centerObj.Transform();
+       Redisplay();
+    }
+    
+    function Reset(){
+        for(let x=0;x<objects.length;x++){
+            objects[x].Reset();
+        }
+        AdjustObjs();
+    }
+    
+    function Redisplay() {
+        canvas.Clear();
+        
+        for(let x=0;x<objects.length;x++){
+            objects[x].Display(canvas.GL(), mat4(), canvas.Translate());
+        }
+    }
+    
+    function Modify(){
+        canvas.Adjust();
+    }
+
+    Redisplay();
+    Animate();
+</script>
+<br>
+<h2>Camera</h2>
+camera: <input type ="number" name="camera" id="camera" value="-1" min = "-10" max="-0.5"><br>
+width: <input type ="number" id="width" name="width" value="1"><br>
+height: <input type ="number" id="height" name="height" value="1"><br>
+near: <input type ="number" id="near" name="near" value="1" min="0"><br>
+far: <input type ="number" id="far" name="far" value="10" max="10"><br>
+<button type="button" id="Redraw" onclick="Modify()">Redraw</button>
+
+</body>

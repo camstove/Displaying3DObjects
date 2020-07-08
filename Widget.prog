@@ -1,0 +1,78 @@
+'use strict'
+
+class Widget {
+    constructor(gl, program, tris, middle) {
+        
+        this.middle = middle;
+         this.tris = tris;
+         this.size = tris.length;
+         this.center = [0,0,0];
+         
+        for(let x=0;x<this.size;x++){
+            this.center[0]+=this.tris[x][0];
+            this.center[1]+=this.tris[x][1];
+            this.center[2]+=this.tris[x][2];
+        }
+        
+        for(let n=0;n<this.center.length;n++){
+            //console.log(this.center + " / " + this.size);
+            this.center[n]/=this.size;
+        }
+        
+        var bcs = [];
+        for (var i=0;i<tris.length/3;i++) {
+            bcs.push([0.0,1.0,2.0]); 
+        }
+        
+        this.SetupVBO(gl, program, tris, bcs);
+    }
+    
+    
+    
+    SetupVBO(gl, program, tris, bcs) {
+        
+        this.vPos =  gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vPos);
+        
+        this.aPos =  gl.getAttribLocation(program, "attributePosition");
+        
+        gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(this.aPos);
+        gl.bufferData(gl.ARRAY_BUFFER,flatten(tris),gl.STATIC_DRAW);
+        
+        this.vBC = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vBC);
+        
+        this.aBC = gl.getAttribLocation(program, "attributeBC");
+        gl.vertexAttribPointer(this.aBC,1,gl.FLOAT, false,0,0);
+        gl.enableVertexAttribArray(this.aBC);
+        gl.bufferData(gl.ARRAY_BUFFER,flatten(bcs),gl.STATIC_DRAW);
+        
+        // a buffer for the colors
+         this.cBuffer = gl.createBuffer();
+         gl.bindBuffer(gl.ARRAY_BUFFER, this.cBuffer);
+         
+         var colorAttribute = gl.getAttribLocation(program, "vColor");
+         gl.vertexAttribPointer(colorAttribute,4,gl.FLOAT, false,0,0);
+         gl.enableVertexAttribArray(colorAttribute);
+    }
+    
+    GetMiddle(){
+        return this.middle;
+    }
+    
+    
+    Display(gl, transform, transLoc) {
+
+            // use it
+            gl.uniformMatrix4fv(transLoc, false, flatten(transform)); 
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vPos);
+            gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, 0, 0);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vBC);
+            gl.vertexAttribPointer(this.aBC,1,gl.FLOAT, false,0,0);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, this.size);
+    }
+}
